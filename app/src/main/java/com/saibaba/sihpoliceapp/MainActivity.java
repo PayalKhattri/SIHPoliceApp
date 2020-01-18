@@ -3,10 +3,15 @@ package com.saibaba.sihpoliceapp;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+
+import com.google.android.gms.location.LocationServices;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+
+import android.view.MenuItem;
 import android.view.View;
 
 import androidx.core.app.ActivityCompat;
@@ -17,7 +22,10 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.saibaba.sihpoliceapp.login.Login;
 import com.saibaba.sihpoliceapp.map.MapsActivity;
+import com.saibaba.sihpoliceapp.services.locationService;
 
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -26,10 +34,13 @@ import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
 import android.widget.Button;
 
+import java.util.HashMap;
+
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
 Button capturecri;
+    FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +49,7 @@ Button capturecri;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -51,13 +62,14 @@ Button capturecri;
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow,
-                R.id.nav_tools, R.id.nav_share, R.id.nav_send,R.id.nav_police)
+                R.id.nav_tools, R.id.nav_share)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
         goForPermissionCheck();
+        setFabButton();
 
     }
 
@@ -96,5 +108,30 @@ Button capturecri;
         ActivityCompat.requestPermissions(this,permission,request_code);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId()==R.id.action_logout){
+            stopService(new Intent(this, locationService.class));
+            SharedPreferences.Editor editor=getSharedPreferences(Constants.USER_DATA_SHARED_PREFERENCE,MODE_PRIVATE).edit();
+            editor.clear();
+            editor.apply();
+            FirebaseAuth.getInstance().signOut();
+            startActivity(new Intent(this, Login.class));
+            finish();
+        }
+        return true;
+    }
+
+    private void setFabButton(){
+        HashMap<String,String> hashMap=Constants.getDataFromSharedPreferences(this);
+        if(hashMap.get(Constants.USER_LEVEL).equals("3")){
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Snackbar.make(v,"You are not allowed",Snackbar.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
 
 }
